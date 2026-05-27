@@ -1,69 +1,68 @@
 const express = require('express');
-const fetch   = require('node-fetch');
+const fetch = require('node-fetch');
 
-const app  = express();
+const app = express();
 const PORT = process.env.PORT || 3000;
-const TC   = 'https://www.transparentclassroom.com/api/v1';
+const TC = 'https://www.transparentclassroom.com/api/v1';
 
 app.use(express.json());
 
-// Allow ALL origins
 app.use(function(req, res, next) {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type,x-tc-token,x-tc-school-id');
-  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', '*');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
   next();
 });
 
-app.get('/', (req, res) => {
-  res.json({ status: 'MAC TC Proxy is running' });
+app.get('/', function(req, res) {
+  res.json({ status: 'MAC TC Proxy is running', cors: 'enabled' });
 });
 
-app.post('/auth', async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+app.post('/auth', async function(req, res) {
   try {
-    const tcRes = await fetch(`${TC}/authenticate.json`, {
-      headers: { 'Authorization': 'Basic ' + Buffer.from(`${email}:${password}`).toString('base64') }
+    const { email, password } = req.body;
+    const tcRes = await fetch(TC + '/authenticate.json', {
+      headers: { 'Authorization': 'Basic ' + Buffer.from(email + ':' + password).toString('base64') }
     });
-    if (!tcRes.ok) return res.status(tcRes.status).json({ error: 'TC authentication failed' });
     const data = await tcRes.json();
-    res.json({ api_token: data.api_token, school_id: data.school_id, first_name: data.first_name, last_name: data.last_name });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.json(data);
+  } catch(e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
-app.get('/children', async (req, res) => {
-  const token = req.headers['x-tc-token'];
-  const schoolId = req.headers['x-tc-school-id'];
-  if (!token) return res.status(401).json({ error: 'Missing token' });
+app.get('/children', async function(req, res) {
   try {
-    const tcRes = await fetch(`${TC}/children.json?only_current=true`, {
-      headers: { 'X-TransparentClassroomToken': token, 'X-TransparentClassroomSchoolId': schoolId }
+    const tcRes = await fetch(TC + '/children.json?only_current=true', {
+      headers: {
+        'X-TransparentClassroomToken': req.headers['x-tc-token'],
+        'X-TransparentClassroomSchoolId': req.headers['x-tc-school-id']
+      }
     });
-    res.status(tcRes.status).json(await tcRes.json());
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.json(await tcRes.json());
+  } catch(e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
-app.get('/activity', async (req, res) => {
-  const token = req.headers['x-tc-token'];
-  const schoolId = req.headers['x-tc-school-id'];
-  if (!token) return res.status(401).json({ error: 'Missing token' });
-  const { child_id, date_start } = req.query;
+app.get('/activity', async function(req, res) {
   try {
-    const params = new URLSearchParams({ child_id });
-    if (date_start) params.set('date_start', date_start);
-    const tcRes = await fetch(`${TC}/activity.json?${params}`, {
-      headers: { 'X-TransparentClassroomToken': token, 'X-TransparentClassroomSchoolId': schoolId }
+    const tcRes = await fetch(TC + '/activity.json?child_id=' + req.query.child_id + '&date_start=' + (req.query.date_start || ''), {
+      headers: {
+        'X-TransparentClassroomToken': req.headers['x-tc-token'],
+        'X-TransparentClassroomSchoolId': req.headers['x-tc-school-id']
+      }
     });
-    res.status(tcRes.status).json(await tcRes.json());
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.json(await tcRes.json());
+  } catch(e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
-app.listen(PORT, () => console.log(`TC Proxy running on port ${PORT}`));
+app.listen(PORT, function() {
+  console.log('Running on port ' + PORT);
+});
