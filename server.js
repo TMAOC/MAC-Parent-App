@@ -10,7 +10,7 @@ const TC   = 'https://www.transparentclassroom.com/api/v1';
 // Replace 'https://www.yourdomain.com' with your actual school website URL.
 // You can add multiple origins in the array if needed.
 const ALLOWED_ORIGINS = [
-  'https://www.yourdomain.com',    // ← change this
+  'https://www.montessoriacademyofcolorado.com',    // ← change this
   'http://localhost',              // for local testing
 ];
 
