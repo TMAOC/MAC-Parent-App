@@ -9,21 +9,9 @@ const TC   = 'https://www.transparentclassroom.com/api/v1';
 // ── Allow requests from your FinalSite domain ──────────────────────────────
 // Replace 'https://www.yourdomain.com' with your actual school website URL.
 // You can add multiple origins in the array if needed.
-const ALLOWED_ORIGINS = [
-  'https://www.montessoriacademyofcolorado.com',    // ← change this
-  'http://localhost',              // for local testing
-];
+const ALLOWED_ORIGINS = '*';
 
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (e.g. direct browser testing)
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS: ' + origin));
-    }
-  }
-}));
+app.use(cors());
 
 app.use(express.json());
 
